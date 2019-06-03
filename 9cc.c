@@ -8,7 +8,15 @@
 enum {
   TK_NUM = 256, // 整数トークン
   TK_EOF,       // 入力の終わりを表すトークン
+  ND_NUM = 256, // 整数のノードの型
 };
+
+typedef struct Node {
+  int ty;           // 演算子かND_NUM
+  struct Node *lhs; // 左辺
+  struct Node *rhs; // 右辺
+  int val;          // tyがND_NUMの場合のみ使う
+} Node;
 
 // トークンの型 Token で宣言可能になる
 typedef struct {
@@ -42,6 +50,55 @@ void error_at(char *loc, char *msg) {
   fprintf(stderr, "%*s", pos, ""); // pos個の空白を出力
   fprintf(stderr, "^ %s\n", msg);
   exit(1);
+}
+
+Node *new_node_num(int val) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ND_NUM;
+  node->val = val;
+  return node;
+}
+
+Node *new_node(int ty, Node *lhs, Node *rhs) {
+  Node *node = malloc(sizeof(Node));
+  node->ty = ty;
+  node->lhs = lhs;
+  node->rhs = rhs;
+  return node;
+}
+
+int pos = 0;
+
+int consume(int ty) {
+  if (tokens[pos].ty != ty) {
+    return 0;
+  }
+
+  pos++;
+  return 1;
+}
+
+Node *num() {
+  // +/-でなければ数値のはず
+  if (tokens[pos].ty == TK_NUM) {
+    return new_node_num(tokens[pos++].val);
+  }
+
+  error_at(tokens[pos].input, "数値ではないトークンです");
+}
+
+Node *expr() {
+  Node *node = num();
+
+  for(;;) {
+    if (consume('+')) {
+      node = new_node('+', node, num());
+    } else if (consume('-')) {
+      node = new_node('-', node, num());
+    } else {
+      return node;
+    }
+  }
 }
 
 void tokenize() {
@@ -152,6 +209,10 @@ int main(int argc, char **argv) {
   user_input = argv[1];
   tokenize();
 
+  // パースする
+  Node *node = expr();
+
+  // アセンブリの前半部分を出力
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
