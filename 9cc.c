@@ -79,7 +79,7 @@ int consume(int ty) {
 }
 
 Node *num() {
-  // +/-でなければ数値のはず
+  // +/-/*/[/]でなければ数値のはず
   if (tokens[pos].ty == TK_NUM) {
     return new_node_num(tokens[pos++].val);
   }
@@ -87,14 +87,28 @@ Node *num() {
   error_at(tokens[pos].input, "数値ではないトークンです");
 }
 
-Node *expr() {
+Node *mul() {
   Node *node = num();
 
   for(;;) {
+    if (consume('*')) {
+      node = new_node('*', node, num());
+    } else if (consume('/')) {
+      node = new_node('/', node, num());
+    } else {
+      return node;
+    }
+  }
+}
+
+Node *expr() {
+  Node *node = mul();
+
+  for(;;) {
     if (consume('+')) {
-      node = new_node('+', node, num());
+      node = new_node('+', node, mul());
     } else if (consume('-')) {
-      node = new_node('-', node, num());
+      node = new_node('-', node, mul());
     } else {
       return node;
     }
@@ -118,7 +132,7 @@ void tokenize() {
       continue;
     }
 
-    if (*p == '+' || *p == '-') {
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       i++;
