@@ -153,6 +153,30 @@ void tokenize() {
   tokens[i].input = p;
 }
 
+void gen(Node *node) {
+  if (node->ty == ND_NUM) {
+    printf("  push %d\n", node->val);
+    return;
+  }
+
+  gen(node->lhs);
+  gen(node->rhs);
+
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
+
+  switch (node->ty) {
+    case '+':
+      printf("  add rax, rdi\n");
+      break;
+    case '-':
+      printf("  sub rax, rdi\n");
+      break;
+  }
+
+  printf("  push rax\n");
+}
+
 int main(int argc, char **argv) {
   // 今現在引数はクォートで囲んだ計1つの引数しか取れないため、
   // コマンドと合わせて2つでないとエラーを返す
@@ -217,43 +241,12 @@ int main(int argc, char **argv) {
   printf(".global main\n");
   printf("main:\n");
 
-  // 式の最初は数でなければならないので、それをチェックして
-  // 最初のmov命令を出力
-  if (tokens[0].ty != TK_NUM) {
-    error_at(tokens[0].input, "数ではありません");
-  }
+  // 抽象構文木を下りながらコード生成
+  gen(node);
 
-  printf("  mov rax, %d\n", tokens[0].val);
-
-  // `+ <数>`あるいは`- <数>`というトークンの並びを消費しつつ
-  // アセンブリを出力
-  int i = 1;
-  while (tokens[i].ty != TK_EOF) {
-    if (tokens[i].ty == '+') {
-      i++;
-      if (tokens[i].ty != TK_NUM) {
-        error_at(tokens[i].input, "数ではありません");
-      }
-
-      printf("  add rax, %d\n", tokens[i].val);
-      i++;
-      continue;
-    }
-
-    if (tokens[i].ty == '-') {
-      i++;
-      if (tokens[i].ty != TK_NUM) {
-        error_at(tokens[i].input, "数ではありません");
-      }
-
-      printf("  sub rax, %d\n", tokens[i].val);
-      i++;
-      continue;
-    }
-
-    error_at(tokens[i].input, "予期しないトークンです");
-  }
-
+  // スタックトップに式全体の値が残っているはずなので
+  // それをRAXにロードして関数からの返り値とする
+  printf("  pop rax\n");
   printf("  ret\n");
   return 0;
 }
