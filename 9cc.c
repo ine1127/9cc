@@ -205,6 +205,11 @@ void gen(Node *node) {
     case '/':
       printf("  cqo\n");
       printf("  idiv rdi\n");
+      break;
+    case '%':
+      printf("  mov rdx, 0\n");
+      printf("  idiv rdi\n");
+      printf("  mov rax, rdx\n");
   }
 
   printf("  push rax\n");
