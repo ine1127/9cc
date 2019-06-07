@@ -1,4 +1,6 @@
 *~
 *.o
+.bash_history
+a.out
 tmp*
 9cc
