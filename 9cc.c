@@ -9,6 +9,10 @@ enum {
   TK_NUM = 256, // 整数トークン
   TK_EOF,       // 入力の終わりを表すトークン
   ND_NUM = 256, // 整数のノードの型
+  TK_EQ,
+  TK_NE,
+  TK_LE,
+  TK_GE,
 };
 
 typedef struct Node {
@@ -156,6 +160,50 @@ void tokenize() {
     }
 
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '%' || *p == '(' || *p == ')') {
+      tokens[i].ty = *p;
+      tokens[i].input = p;
+      i++;
+      p++;
+      continue;
+    }
+
+    if (*p == '=' && *(p+1) == '=') {
+      tokens[i].ty = TK_EQ;
+      tokens[i].input = p;
+      i++;
+      p = p + 2;
+      continue;
+    }
+
+    if (*p == '!' && *(p+1) == '=') {
+      tokens[i].ty = TK_NE;
+      tokens[i].input = p;
+      i++;
+      p = p + 2;
+      continue;
+    }
+
+    if (*p == '<' && *(p+1) == '=') {
+      tokens[i].ty = TK_LE;
+      tokens[i].input = p;
+      i++;
+      p = p + 2;
+      continue;
+    } else if (*p == '<') {
+      tokens[i].ty = *p;
+      tokens[i].input = p;
+      i++;
+      p++;
+      continue;
+    }
+
+    if (*p == '>' && *(p+1) == '=') {
+      tokens[i].ty = TK_GE;
+      tokens[i].input = p;
+      i++;
+      p = p + 2;
+      continue;
+    } else if (*p == '>') {
       tokens[i].ty = *p;
       tokens[i].input = p;
       i++;
