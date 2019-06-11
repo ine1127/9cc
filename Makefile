@@ -1,3 +1,5 @@
+DIR = $(shell pwd)
+
 9cc: 9cc.c
 
 test: 9cc
@@ -17,4 +19,4 @@ build:
 	docker imabe build -t 9cc .
 
 container:
-	-docker container run --rm -it --cap-add=SYS_PTRACE --security-opt="seccomp=unconfined" -v $HOME/Work/git/9cc:/root 9cc
+	-docker container run --rm -it --cap-add=SYS_PTRACE --security-opt="seccomp=unconfined" -v $(DIR):/root 9cc
