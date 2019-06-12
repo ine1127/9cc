@@ -6,9 +6,9 @@
 
 // トークンの型を表す値
 enum {
+  ND_NUM = 256, // 整数のノードの型
   TK_NUM = 256, // 整数トークン
   TK_EOF,       // 入力の終わりを表すトークン
-  ND_NUM = 256, // 整数のノードの型
   TK_EQ,
   TK_NE,
   TK_LE,
@@ -111,7 +111,8 @@ Node *unary() {
   }
 
   return term();
-} 
+}
+
 Node *mul() {
   Node *node = unary();
 
@@ -128,7 +129,7 @@ Node *mul() {
   }
 }
 
-Node *expr() {
+Node *add() {
   Node *node = mul();
 
   for(;;) {
@@ -140,6 +141,42 @@ Node *expr() {
       return node;
     }
   }
+}
+
+Node *relational() {
+  Node *node = add();
+
+  for(;;) {
+    if (consume(TK_LE)) {
+      node = new_node(TK_LE, node, add());
+    } else if (consume('<')) {
+      node = new_node('<', node, add());
+    } else if (consume(TK_GE)) {
+      node = new_node(TK_GE, node, add());
+    } else if (consume('>')) {
+      node = new_node('>', node, add());
+    } else {
+      return node;
+    }
+  }
+}
+
+Node *equality() {
+  Node *node = relational();
+
+  for(;;) {
+    if (consume(TK_EQ)) {
+      node = new_node(TK_EQ, node, relational());
+    } else if (consume(TK_NE)) {
+      node = new_node(TK_NE, node, relational());
+    } else {
+      return node;
+    }
+  }
+}
+
+Node *expr() {
+  Node *node = equality();
 }
 
 void tokenize() {
