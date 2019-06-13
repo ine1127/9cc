@@ -116,7 +116,7 @@ Node *unary() {
 Node *mul() {
   Node *node = unary();
 
-  for(;;) {
+  for (;;) {
     if (consume('*')) {
       node = new_node('*', node, unary());
     } else if (consume('/')) {
@@ -132,7 +132,7 @@ Node *mul() {
 Node *add() {
   Node *node = mul();
 
-  for(;;) {
+  for (;;) {
     if (consume('+')) {
       node = new_node('+', node, mul());
     } else if (consume('-')) {
@@ -146,15 +146,15 @@ Node *add() {
 Node *relational() {
   Node *node = add();
 
-  for(;;) {
+  for (;;) {
     if (consume(TK_LE)) {
       node = new_node(TK_LE, node, add());
     } else if (consume('<')) {
       node = new_node('<', node, add());
     } else if (consume(TK_GE)) {
-      node = new_node(TK_GE, node, add());
+      node = new_node(TK_GE, add(), node);
     } else if (consume('>')) {
-      node = new_node('>', node, add());
+      node = new_node('>', add(), node);
     } else {
       return node;
     }
@@ -164,7 +164,7 @@ Node *relational() {
 Node *equality() {
   Node *node = relational();
 
-  for(;;) {
+  for (;;) {
     if (consume(TK_EQ)) {
       node = new_node(TK_EQ, node, relational());
     } else if (consume(TK_NE)) {
@@ -307,6 +307,29 @@ void gen(Node *node) {
       printf("  idiv rdi\n");
       printf("  push rdx\n");
       printf("  pop rax\n");
+      break;
+    case TK_EQ:
+      printf("  cmp rax, rdi\n");
+      printf("  sete al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case TK_NE:
+      printf("  cmp rax, rdi\n");
+      printf("  setne al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case '<':
+    case '>':
+      printf("  cmp rax, rdi\n");
+      printf("  setl al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case TK_LE:
+    case TK_GE:
+      printf("  cmp rax, rdi\n");
+      printf("  setle al\n");
+      printf("  movzb rax, al\n");
+      break;
   }
 
   printf("  push rax\n");
