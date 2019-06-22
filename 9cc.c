@@ -30,6 +30,17 @@ typedef struct {
   char *input;  // トークン文字列 (エラーメッセージ用)
 } Token;
 
+// 可変長ベクタ
+// Vector型を宣言できる構造体を作成
+// **data はデータ本体(式)
+// capacity はバッファの領域
+// len はベクタに追加済みの長さ
+typedef struct {
+  void **data;
+  int capacity;
+  int len;
+} Vector;
+
 // 入力プログラム
 // ポインタ変数として宣言
 // これで user_input に char型(1byte)分のメモリアドレスを格納できるようになった
@@ -38,6 +49,35 @@ char *user_input;
 // トークナイズした結果のトークン列はこの配列に保存する
 // 100個以上のトークンは来ないものとする
 Token tokens[100];
+
+// Vector 型のバイト数分のメモリサイズを確保し
+// data に void * 型を16倍した分のメモリサイズを確保する
+// void * 型は64bitの場合8byteなので、 8 * 16 = 128
+// 128byte分のメモリサイズを確保する
+// capacity は16で固定
+// len はベクタに追加済みの長さを入れていくメンバ変数になるので0が入る
+Vector *new_vector() {
+  Vector *vec = malloc(sizeof(Vector));
+  vec->data = malloc(sizeof(void *) * 16);
+  vec->capacity = 16;
+  vec->len = 0;
+  return vec;
+}
+
+// Vector 型の引数と、 void * 型の引数を取る
+// capacity と len を比較して同じであれば、 capacity を2倍する
+// 16 -> 32 -> 64 -> 128 と増えていくことになる
+// data も void * 型の8byteに capacity を乗算する
+// 128 -> 256 -> 512 -> 1024 と増えていく
+// 比較した結果が偽であれば、 data の配列数(len)を1増やす
+void vec_push(Vector *vec, void *elem) {
+  if (vec->capacity == vec->len) {
+    vec->capacity *= 2;
+    vec->data = realloc(vec->data, sizeof(void *) * vec->capacity);
+  }
+
+  vec->data[vec->len++] = elem;
+}
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -427,7 +467,7 @@ int main(int argc, char **argv) {
   // で、Cでは p[i] と、 *(p+i) は同等の意味を持つ
   // この+iは見て分かる通り配列の番号を意味しており、これは意味合い的には 
   // メモリアドレスの値 + 宣言した際の型のバイト数 * i というものだ
-  // コードにすると *argv[i] は *(*(argv+i) という形に変換可能となる
+  // コードにすると *argv[i] は *(*(argv+i)) という形に変換可能となる
   // ポインタで参照したアドレスを更にポインタで参照する形である
   //
   // 実際に値にアクセスする時は、以下のような流れになる(メモリアドレスは適当)
